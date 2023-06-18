@@ -1,0 +1,1 @@
+Soil Moisture Sensor Adapter by valknut on Thingiverse: https://www.thingiverse.com/thing:2391967
