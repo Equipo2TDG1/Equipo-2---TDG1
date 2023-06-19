@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include <RF24.h>
 
-RF24 radio(9, 10);  // Crear un objeto NRF24L01 y especificar los pines CE y CSN
+RF24 radio(22, 21);  // Crear un objeto NRF24L01 y especificar los pines CE y CSN (GPIO22 y GPIO21 en el ESP32 DevKit V1)
 
 struct AnalogData {
   int level;
@@ -15,10 +15,12 @@ void setup() {
   radio.begin();       // Inicializar el módulo NRF24L01
   radio.openWritingPipe(0xF0F0F0F0E1LL);  // Dirección de escritura del canal de comunicación
   radio.setPALevel(RF24_PA_HIGH);         // Configurar la potencia de transmisión
+
+  pinMode(36, INPUT);  // Configurar el pin GPIO35 (análogo) como entrada para el sensor de humedad
 }
 
 void loop() {
-  analogData.level = analogRead(A0);  // Leer el valor analógico del pin A0
+  analogData.level = analogRead(36);  // Leer el valor analógico del pin GPIO35 (D35)
 
   // Imprimir el valor analógico en el monitor serial
   Serial.print("Valor Analógico: ");
@@ -29,3 +31,4 @@ void loop() {
 
   delay(2000);  // Esperar 2 segundos antes de realizar la próxima lectura y envío de datos
 }
+

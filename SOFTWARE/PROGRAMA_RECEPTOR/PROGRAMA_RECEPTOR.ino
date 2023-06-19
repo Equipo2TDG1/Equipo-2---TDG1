@@ -1,3 +1,15 @@
+/******************************************
+ *
+ * This example works for both Industrial and STEM users.
+ *
+ * Developed by Jose Garcia, https://github.com/jotathebest/
+ *
+ * ****************************************/
+
+/****************************************
+ * Include Libraries
+ ****************************************/
+#include "UbidotsEsp32Mqtt.h"
 #include <SPI.h>
 #include <RF24.h>
 
@@ -9,17 +21,77 @@ struct AnalogData {
 
 AnalogData analogData;
 
-void setup() {
-  Serial.begin(9600);  // Establecer la velocidad de comunicación del monitor serial en 9600
+/****************************************
+ * Define Constants
+ ****************************************/
+const char *UBIDOTS_TOKEN = "";  // Put here your Ubidots TOKEN
+const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
+const char *WIFI_PASS = "";      // Put here your Wi-Fi password
+const char *DEVICE_LABEL = "";   // Put here your Device label to which data  will be published
+const char *VARIABLE_LABEL = ""; // Put here your Variable label to which data  will be published
+
+const int PUBLISH_FREQUENCY = 5000; // Update rate in milliseconds
+
+unsigned long timer;
+uint8_t analogPin = 34; // Pin used to read data from GPIO34 ADC_CH6.
+
+Ubidots ubidots(UBIDOTS_TOKEN);
+
+/****************************************
+ * Auxiliar Functions
+ ****************************************/
+
+void callback(char *topic, byte *payload, unsigned int length)
+{
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++)
+  {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+}
+
+/****************************************
+ * Main Functions
+ ****************************************/
+
+void setup()
+{
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+  // ubidots.setDebug(true);  // uncomment this to make debug messages available
+  ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
+  ubidots.setCallback(callback);
+  ubidots.setup();
+  ubidots.reconnect();
 
   radio.begin();       // Inicializar el módulo NRF24L01
   radio.openReadingPipe(1, 0xF0F0F0F0E1LL);  // Establecer la dirección de lectura del canal de comunicación
   radio.setPALevel(RF24_PA_HIGH);            // Configurar la potencia de recepción
 
   radio.startListening();  // Establecer el módulo NRF24L01 en modo de recepción
+
+  timer = millis();
 }
 
-void loop() {
+void loop()
+{
+  // put your main code here, to run repeatedly:
+  if (!ubidots.connected())
+  {
+    ubidots.reconnect();
+  }
+  if (abs(millis() - timer) > PUBLISH_FREQUENCY) // triggers the routine every 5 seconds
+  {
+    float value = analogRead(analogPin);
+    ubidots.add(VARIABLE_LABEL, value); // Insert your variable Labels and the value to be sent
+    ubidots.publish(DEVICE_LABEL);
+    timer = millis();
+  }
+  ubidots.loop();
+
   if (radio.available()) {
     radio.read(&analogData, sizeof(analogData));  // Leer los datos recibidos
 
@@ -28,49 +100,3 @@ void loop() {
     Serial.println(analogData.level);
   }
 }
-
-// Este ejemplo recupera el último valor de una variable de la API de Ubidots                      
-// utilizando el protocolo TCP. 
-
-/**************************************** 
-* Incluir bibliotecas 
-****** *********************************/ 
-#incluir <Ubidots.h>   
-
-/******* ******************************** 
-* Definir constantes 
-************** **************************/ 
-
-// Sus credenciales GPRS, si las hay 
-const char *APN = "Pon_el_APN_aquí"; 
-const char *USUARIO = "Pon_el_usuario_APN_aquí"; 
-const char *PASS = "Pon_el_APN_pwd_aquí"; 
-const char *FICHA = "Pon_tu_ficha_de_Ubidots_aquí"; 
-const char *DEVICE_LABEL = "Pon_tu_dispositivo_API_etiqueta";
-const char *VARIABLE_LABEL = "Pon_tu_variable_API_etiqueta"; 
-
-Cliente de Ubidots (TOKEN, APN, USUARIO, PASS); 
-
-/**************************************** 
-* Funciones auxiliares 
-****** *********************************/ 
-                          
-// Pon aquí tus funciones auxiliares      
-
-/******* ******************************** 
-* Funciones principales 
-************** **************************/   
-
-void setup() { 
-  Serial.begin(115200); 
-  client.setDebug(true);// Establecer verdadero para que los mensajes de depuración estén disponibles 
-} 
-
-void loop() { 
-  float value = client.get(DEVICE_LABEL, VARIABLE_LABEL); 
-  if(value!=ERROR_VALUE){ 
-    Serial.print("Obteniendo el valor de la variable: "); 
-    Serial.println(valor);
-  } 
-  retraso (5000); 
-} 
