@@ -13,7 +13,7 @@
 #include <SPI.h>
 #include <RF24.h>
 
-RF24 radio(9, 10);  // Crear un objeto NRF24L01 y especificar los pines CE y CSN
+RF24 radio(22, 21);  // Crear un objeto NRF24L01 y especificar los pines CE y CSN
 
 struct AnalogData {
   int level;
@@ -24,9 +24,9 @@ AnalogData analogData;
 /****************************************
  * Define Constants
  ****************************************/
-const char *UBIDOTS_TOKEN = "";  // Put here your Ubidots TOKEN
-const char *WIFI_SSID = "";      // Put here your Wi-Fi SSID
-const char *WIFI_PASS = "";      // Put here your Wi-Fi password
+const char *UBIDOTS_TOKEN = "BBFF-SKS8shDEAVTBErrHFycDQzCuvVyLob";  // Put here your Ubidots TOKEN
+const char *WIFI_SSID = "Jorge's Galaxy A72";      // Put here your Wi-Fi SSID
+const char *WIFI_PASS = "zahh2486";      // Put here your Wi-Fi password
 const char *DEVICE_LABEL = "";   // Put here your Device label to which data  will be published
 const char *VARIABLE_LABEL = ""; // Put here your Variable label to which data  will be published
 
@@ -41,17 +41,17 @@ Ubidots ubidots(UBIDOTS_TOKEN);
  * Auxiliar Functions
  ****************************************/
 
-void callback(char *topic, byte *payload, unsigned int length)
-{
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++)
-  {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-}
+// void callback(char *topic, byte *payload, unsigned int length)
+// {
+//   Serial.print("Message arrived [");
+//   Serial.print(topic);
+//   Serial.print("] ");
+//   for (int i = 0; i < length; i++)
+//   {
+//     Serial.print((char)payload[i]);
+//   }
+//   Serial.println();
+// }
 
 /****************************************
  * Main Functions
@@ -63,12 +63,12 @@ void setup()
   Serial.begin(115200);
   // ubidots.setDebug(true);  // uncomment this to make debug messages available
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
-  ubidots.setCallback(callback);
+  // ubidots.setCallback(callback);
   ubidots.setup();
   ubidots.reconnect();
 
   radio.begin();       // Inicializar el módulo NRF24L01
-  radio.openReadingPipe(1, 0xF0F0F0F0E1LL);  // Establecer la dirección de lectura del canal de comunicación
+  radio.openReadingPipe(1,0xF0F0F0F0E1LL);  // Establecer la dirección de lectura del canal de comunicación
   radio.setPALevel(RF24_PA_HIGH);            // Configurar la potencia de recepción
 
   radio.startListening();  // Establecer el módulo NRF24L01 en modo de recepción
