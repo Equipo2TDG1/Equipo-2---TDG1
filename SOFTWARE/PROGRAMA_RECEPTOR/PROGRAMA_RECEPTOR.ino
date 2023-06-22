@@ -60,7 +60,7 @@ Ubidots ubidots(UBIDOTS_TOKEN);
 void setup()
 {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(115200);
   // ubidots.setDebug(true);  // uncomment this to make debug messages available
   ubidots.connectToWifi(WIFI_SSID, WIFI_PASS);
   // ubidots.setCallback(callback);
