@@ -1,34 +1,73 @@
+// SimpleTx - the master or the transmitter
+
 #include <SPI.h>
+#include <nRF24L01.h>
 #include <RF24.h>
 
-RF24 radio(22, 21);  // Crear un objeto NRF24L01 y especificar los pines CE y CSN (GPIO22 y GPIO21 en el ESP32 DevKit V1)
 
-struct AnalogData {
-  int level;
-};
+#define CE_PIN  22
+#define CSN_PIN 21
 
-AnalogData analogData;
+const byte slaveAddress[5] = {'R','x','A','A','A'};
+
+
+RF24 radio(CE_PIN, CSN_PIN); // Create a Radio
+
+int analogData = 0;
+
+unsigned long currentMillis;
+unsigned long prevMillis;
+unsigned long txIntervalMillis = 1000; // send once per second
+
 
 void setup() {
-  Serial.begin(9600);  // Establecer la velocidad de comunicación del monitor serial en 9600
 
-  radio.begin();       // Inicializar el módulo NRF24L01
-  radio.openWritingPipe(0xF0F0F0F0E1LL);  // Dirección de escritura del canal de comunicación
-  radio.setPALevel(RF24_PA_HIGH);         // Configurar la potencia de transmisión
+    Serial.begin(9600);
 
-  pinMode(36, INPUT);  // Configurar el pin GPIO35 (análogo) como entrada para el sensor de humedad
+    Serial.println("SimpleTx Starting");
+
+    radio.begin();
+    radio.setDataRate( RF24_250KBPS );
+    radio.setRetries(3,5); // delay, count
+    radio.openWritingPipe(slaveAddress);
+    pinMode(36, INPUT);
+
 }
+
+//====================
 
 void loop() {
-  analogData.level = analogRead(36);  // Leer el valor analógico del pin GPIO35 (D35)
-
-  // Imprimir el valor analógico en el monitor serial
-  Serial.print("Valor Analógico: ");
-  Serial.println(analogData.level);
-
-  // Enviar los datos analógicos a través del NRF24L01
-  radio.write(&analogData, sizeof(analogData));
-
-  delay(2000);  // Esperar 2 segundos antes de realizar la próxima lectura y envío de datos
+    currentMillis = millis();
+    if (currentMillis - prevMillis >= txIntervalMillis) {
+        updateAnalogData();
+        send();
+        prevMillis = millis();
+    }
 }
 
+
+//====================
+
+void send() {
+
+    bool rslt;
+    rslt = radio.write(&analogData, sizeof(analogData));
+        // Always use sizeof() as it gives the size as the number of bytes.
+        // For example if dataToSend was an int sizeof() would correctly return 2
+
+    Serial.print("Data Sent ");
+    Serial.print(analogData);
+    if (rslt) {
+        Serial.println("  Acknowledge received");
+        updateAnalogData();
+    }
+    else {
+        Serial.println("  Tx failed");
+    }
+}
+
+//================
+
+void updateAnalogData() {
+    analogData = analogRead(36);
+}
